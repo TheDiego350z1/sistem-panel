@@ -7,8 +7,8 @@ import UserMenu from "~/components/layouts/UserMenu";
 
 const navigation = [
   { name: "Dashboard", href: "#", icon: Home, current: true },
-  { name: "Proveedores", href: "#/providers", icon: Users, current: false },
-  { name: "Productos", href: "/providers", icon: BarChart3, current: false },
+  { name: "Proveedores", href: "/providers", icon: Users, current: false },
+  { name: "Productos", href: "/products", icon: BarChart3, current: false },
 ];
 
 export async function loader({ request }: Route.LoaderArgs) {

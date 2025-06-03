@@ -1,8 +1,9 @@
 import { getSession } from "~/sessions.server";
-import type { Route } from "./+types/index";
+import type { Route } from "../products/+types";
+
 import { redirect, useNavigate } from "react-router";
 import { ConexionApi } from "~/services/conexionApi";
-import type { Provider, ProvidersResponse } from "~/interfaces/provider";
+
 import Pagination from "~/components/Pagination";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
@@ -23,14 +24,18 @@ import {
 import { Button } from "~/components/ui/button";
 import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 import { useState } from "react";
-import ViewProvider from "~/components/providers/ViewProvider";
-import DeleteProvider from "~/components/providers/DeleteProvider";
-import ProviderEditModal from "~/components/providers/EditProvider";
+import type { Product, ProductsResponse } from "~/interfaces/product";
+
+//modals
+import ViewProductModal from "~/components/products/ViewProduct";
+import DeleteProductModal from "~/components/products/DelteProduct";
+import ProductEditModal from "~/components/products/EditProcuct";
+import ProductCreateModal from "~/components/products/CreateProduct";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Proveedores" },
-    { name: "description", content: "Administración de proveedores" },
+    { title: "Productos" },
+    { name: "description", content: "Administración de productos" },
   ];
 }
 
@@ -45,7 +50,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   try {
-    const { data } = await ConexionApi.get<ProvidersResponse>("/providers", {
+    const { data } = await ConexionApi.get<ProductsResponse>("/products", {
       params: {
         page: page,
         limit: 10,
@@ -57,7 +62,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     });
 
     return {
-      providers: data.data,
+      products: data.data,
       links: data.links,
       meta: data.meta,
       token: session.get("token"),
@@ -73,32 +78,33 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 }
 
-export default function Index({ loaderData }: Route.ComponentProps) {
+export default function Index({
+  actionData,
+  loaderData,
+}: Route.ComponentProps) {
+  console.log("Index actionData:", actionData);
   const navigate = useNavigate();
 
   const {
-    providers = [],
+    products = [],
     links = null,
     meta = null,
     token,
     currentPage = 1,
   } = loaderData || {};
 
-  // const { success, successMessage, error } = actionData || {};
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
-    null
-  );
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const handlePageChange = (page: number) => {
-    navigate(`/providers?page=${page}`);
+    navigate(`/products?page=${page}`);
   };
 
-  const handleView = (provider: Provider) => {
-    setSelectedProvider(provider);
+  const handleView = (product: Product) => {
+    setSelectedProduct(product);
     setIsModalOpen(true);
   };
 
@@ -106,17 +112,22 @@ export default function Index({ loaderData }: Route.ComponentProps) {
     setIsModalOpen(false);
     setIsDeleteModalOpen(false);
     setIsEditModalOpen(false);
-    setSelectedProvider(null);
+    setIsCreateModalOpen(false);
+    setSelectedProduct(null);
   };
 
-  const handleDelete = (provider: Provider) => {
-    setSelectedProvider(provider);
+  const handleDelete = (product: Product) => {
+    setSelectedProduct(product);
     setIsDeleteModalOpen(true);
   };
 
-  const handleEdit = (provider: Provider) => {
-    setSelectedProvider(provider);
+  const handleEdit = (product: Product) => {
+    setSelectedProduct(product);
     setIsEditModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setIsCreateModalOpen(true);
   };
 
   return (
@@ -125,32 +136,35 @@ export default function Index({ loaderData }: Route.ComponentProps) {
       <Card>
         <CardHeader>
           <CardTitle>Providers</CardTitle>
+          <div className="flex justify-end">
+            <Button onClick={handleCreate}>Create Product</Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Id</TableHead>
                   <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Phone</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Price</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {providers.map((provider) => (
-                  <TableRow key={provider.id}>
+                {products.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium">{product.id}</TableCell>
                     <TableCell className="font-medium">
-                      {provider.name}
+                      {product.name}
                     </TableCell>
-                    <TableCell>{provider.email}</TableCell>
-                    <TableCell
-                      className="max-w-xs truncate"
-                      title={provider.address}>
-                      {provider.address}
+                    <TableCell className="font-medium">
+                      {product.slug}
                     </TableCell>
-                    <TableCell>{provider.phone}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {product.price}
+                    </TableCell>
                     <TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -164,17 +178,17 @@ export default function Index({ loaderData }: Route.ComponentProps) {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => handleView(provider)}>
+                              onClick={() => handleView(product)}>
                               <Eye className="mr-2 h-4 w-4" />
                               View
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleEdit(provider)}>
+                              onClick={() => handleEdit(product)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleDelete(provider)}
+                              onClick={() => handleDelete(product)}
                               className="text-red-600">
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
@@ -200,26 +214,33 @@ export default function Index({ loaderData }: Route.ComponentProps) {
         onPageChange={handlePageChange}
       />
 
-      <ViewProvider
-        provider={selectedProvider}
+      <ViewProductModal
         isOpen={isModalOpen}
         onClose={onCloseModal}
+        product={selectedProduct}
       />
 
-      <DeleteProvider
-        provider={selectedProvider}
+      <DeleteProductModal
+        product={selectedProduct}
         isOpen={isDeleteModalOpen}
         onClose={onCloseModal}
         token={token}
         currentPage={currentPage}
       />
 
-      <ProviderEditModal
-        provider={selectedProvider}
+      <ProductEditModal
+        product={selectedProduct}
         isOpen={isEditModalOpen}
         onClose={onCloseModal}
-        currentPage={currentPage}
         token={token}
+        currentPage={currentPage}
+      />
+
+      <ProductCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={onCloseModal}
+        token={token}
+        currentPage={currentPage}
       />
     </div>
   );
