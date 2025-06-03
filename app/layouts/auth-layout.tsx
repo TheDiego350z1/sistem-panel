@@ -1,25 +1,14 @@
-import {
-  BarChart3,
-  FileText,
-  Home,
-  Menu,
-  Settings,
-  User,
-  Users,
-  X,
-} from "lucide-react";
+import { BarChart3, Home, Menu, Users, X } from "lucide-react";
 import { useState } from "react";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Link, Outlet, redirect, useLoaderData } from "react-router";
 import type { Route } from "./+types/auth-layout";
 import { getSession } from "~/sessions.server";
 import UserMenu from "~/components/layouts/UserMenu";
 
 const navigation = [
   { name: "Dashboard", href: "#", icon: Home, current: true },
-  { name: "Usuarios", href: "#", icon: Users, current: false },
-  { name: "Reportes", href: "#", icon: BarChart3, current: false },
-  { name: "Documentos", href: "#", icon: FileText, current: false },
-  { name: "Configuración", href: "#", icon: Settings, current: false },
+  { name: "Proveedores", href: "#/providers", icon: Users, current: false },
+  { name: "Productos", href: "/providers", icon: BarChart3, current: false },
 ];
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -61,9 +50,9 @@ export default function AuthLayout() {
           </div>
           <nav className="flex-1 px-4 py-4 space-y-2">
             {navigation.map((item) => (
-              <a
+              <Link
                 key={item.name}
-                href={item.href}
+                to={item.href}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   item.current
                     ? "bg-blue-100 text-blue-700"
@@ -71,7 +60,7 @@ export default function AuthLayout() {
                 }`}>
                 <item.icon className="mr-3 h-5 w-5" />
                 {item.name}
-              </a>
+              </Link>
             ))}
           </nav>
         </div>
